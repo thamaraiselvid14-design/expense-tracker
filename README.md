@@ -168,10 +168,15 @@ cd "Expensive Tracker"
    ```
 
 3. **Configure Frontend Environment (`.env`):**
+   Copy `frontend/.env.example` to create `frontend/.env`:
    ```bash
-   # Ensure frontend/.env points to backend
-   VITE_API_URL=http://127.0.0.1:8000/api/expenses
+   # Windows PowerShell
+   Copy-Item .env.example .env
+
+   # macOS / Linux
+   cp .env.example .env
    ```
+   *(Ensure `VITE_API_URL=http://127.0.0.1:8000/api/expenses` is set)*
 
 4. **Verify Frontend Build:**
    ```bash
