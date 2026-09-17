@@ -1,0 +1,430 @@
+{
+  "info": {
+    "_postman_id": "b7849e7b-4029-4d6d-8bc4-9d41d1a6e9a1",
+    "name": "Expense Tracker API",
+    "description": "Comprehensive Postman test collection for the Django REST Framework Expense Tracker API covering full CRUD, validation rules, query filtering, and HTTP status codes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/expenses",
+      "type": "string"
+    },
+    {
+      "key": "expenseId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "todayDate",
+      "value": "2026-09-17",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create expense — valid data (201)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const today = new Date().toISOString().split('T')[0];",
+              "pm.collectionVariables.set('todayDate', today);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Response contains created expense fields', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData.title).to.eql('Lunch');",
+              "    pm.expect(Number(jsonData.amount)).to.eql(120);",
+              "    pm.expect(jsonData.category).to.eql('Food');",
+              "    pm.expect(jsonData.payment_method).to.eql('UPI');",
+              "    pm.collectionVariables.set('expenseId', jsonData.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Lunch\",\n  \"amount\": \"120.00\",\n  \"category\": \"Food\",\n  \"date\": \"{{todayDate}}\",\n  \"payment_method\": \"UPI\",\n  \"description\": \"Afternoon lunch at restaurant\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        },
+        "description": "Creates a new expense using valid payload data. Automatically sets collection variable `expenseId` to the returned ID."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Create expense — missing title (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 400 Bad Request', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('Field error exists for title', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('title');",
+              "    pm.expect(jsonData.title[0]).to.include('blank');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": \"120.00\",\n  \"category\": \"Food\",\n  \"date\": \"{{todayDate}}\",\n  \"payment_method\": \"UPI\",\n  \"description\": \"Missing title validation test\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        },
+        "description": "Validation test: Attempting to create an expense without a required title field must return HTTP 400 with a field error."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Create expense — negative amount (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 400 Bad Request', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('Field error exists for amount', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('amount');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Lunch\",\n  \"amount\": \"-120.00\",\n  \"category\": \"Food\",\n  \"date\": \"{{todayDate}}\",\n  \"payment_method\": \"UPI\",\n  \"description\": \"Negative amount validation test\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        },
+        "description": "Validation test: Attempting to create an expense with a negative amount must be rejected with HTTP 400."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get all expenses (200 list)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is a JSON array list', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+              "    if (jsonData.length > 0) {",
+              "        pm.expect(jsonData[0]).to.have.property('id');",
+              "        pm.expect(jsonData[0]).to.have.property('title');",
+              "        pm.expect(jsonData[0]).to.have.property('amount');",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        },
+        "description": "Retrieves all expense records ordered by date descending by default."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get one expense — valid ID (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Expense item returned has expected structure', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('title');",
+              "    pm.expect(jsonData).to.have.property('amount');",
+              "    pm.expect(jsonData).to.have.property('category');",
+              "    pm.expect(jsonData).to.have.property('payment_method');",
+              "    pm.expect(jsonData).to.have.property('date');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/{{expenseId}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{expenseId}}",
+            ""
+          ]
+        },
+        "description": "Retrieves a single expense by primary key ID."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get one expense — invalid ID 9999 (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 404 Not Found', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test('Response has clear 404 detail message', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('detail');",
+              "    pm.expect(jsonData.detail).to.include(\"Expense with ID '9999' was not found.\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/9999/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "9999",
+            ""
+          ]
+        },
+        "description": "Error handling test: Fetching a non-existent ID 9999 must return HTTP 404 with a helpful message."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Update expense — valid ID, change amount (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Amount has been updated to 150.00', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.amount).to.eql('150.00');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Lunch\",\n  \"amount\": \"150.00\",\n  \"category\": \"Food\",\n  \"date\": \"{{todayDate}}\",\n  \"payment_method\": \"UPI\",\n  \"description\": \"Updated lunch with dessert\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/{{expenseId}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{expenseId}}",
+            ""
+          ]
+        },
+        "description": "Updates an existing expense by ID, modifying the amount from 120.00 to 150.00."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Delete expense — valid ID (204)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 204 No Content', function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/{{expenseId}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "{{expenseId}}",
+            ""
+          ]
+        },
+        "description": "Deletes the target expense by ID, returning HTTP 204 No Content."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Delete expense — invalid ID 9999 (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 404 Not Found', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test('Response has clear 404 detail message', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('detail');",
+              "    pm.expect(jsonData.detail).to.include(\"Expense with ID '9999' was not found.\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/9999/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "9999",
+            ""
+          ]
+        },
+        "description": "Error handling test: Attempting to delete a non-existent expense returns HTTP 404."
+      },
+      "response": []
+    }
+  ]
+}
